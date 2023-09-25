@@ -1,41 +1,59 @@
-# Scan my node app for semantic vulnerabilities with GitHub Code Scanning
-# Upload any vulnerabilities back into my GitHub Repo for developer review.
-
 trigger:
 - main
 
 pool:
   vmImage: 'ubuntu-latest'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '10.x'
-  displayName: 'Install Node.js'
+jobs:
+- job: Build
+  steps:
+  - task: UseJavaVersion@0
+    inputs:
+      versionSpec: '10.x'  # Replace with your desired Java version
+      jdkArchitectureOption: 'x64'
 
-- script: |
-     npm install
-  displayName: 'npm install and test'
+  - script: |
+      # Download and install Maven
+      wget -q https://archive.apache.org/dist/maven/maven-3/3.8.2/binaries/apache-maven-3.8.2-bin.tar.gz
+      tar xzf apache-maven-3.8.2-bin.tar.gz
+      export PATH=$PWD/apache-maven-3.8.2/bin:$PATH
+    displayName: 'Install Maven'
 
-- script: |
-    # wget https://github.com/github/codeql-action/releases/latest/download/codeql-runner-linux
-    wget https://github.com/github/codeql-action/releases/download/codeql-bundle-20200826/codeql-runner-linux
-    chmod +x codeql-runner-linux
-  displayName: 'Get latest CodeQL package. Install on Agent.'
+  - script: |
+      # Download and install Node.js
+      wget -q https://nodejs.org/dist/v14.17.3/node-v14.17.3-linux-x64.tar.xz
+      tar -xJf node-v14.17.3-linux-x64.tar.xz
+      export PATH=$PWD/node-v14.17.3-linux-x64/bin:$PATH
+    displayName: 'Install Node.js'
 
-- script: |
-    ./codeql-runner-linux init \
-    --repository Gopalakrishnan997/ScanGHfromAzDO \
-    --github-url https://github.com \
-    --github-auth $(GITHUB_PAT) \
-    --config-file .github/codeql/codeql-config.yml 
-  displayName: 'Initialize CodeQL Executable and create a CodeQL database'
+  - script: |
+      # Install npm dependencies and run tests
+      npm install
+    displayName: 'npm install and test'
+
+  - script: |
+      # Download and install the CodeQL runner for Linux
+      wget https://github.com/github/codeql-action/releases/download/codeql-bundle-20200826/codeql-runner-linux
+      chmod +x codeql-runner-linux
+    displayName: 'Get latest CodeQL package. Install on Agent.'
+
+  - script: |
+      # Initialize CodeQL and create a CodeQL database
+      ./codeql-runner-linux init \
+      --repository Gopalakrishnan997/ScanGHfromAzDO \
+      --github-url https://github.com \
+      --github-auth $(GITHUB_PAT) \
+      --config-file .github/codeql/codeql-config.yml 
+    displayName: 'Initialize CodeQL Executable and create a CodeQL database'
   
-- script: |
-    ./codeql-runner-linux analyze \
-    --repository Gopalakrishnan997/ScanGHfromAzDO \
-    --github-url https://github.com \
-    --github-auth $(GITHUB_PAT) \
-    --commit $(Build.SourceVersion) \
-    --ref $(Build.SourceBranch)
-  displayName: 'Populate the CodeQL runner databases, analyze them, and upload the results to GitHub..'
+
+  - script: |
+      # Run CodeQL analysis
+      ./codeql-runner-linux analyze \
+      --repository Gopalakrishnan997/ScanGHfromAzDO \
+      --github-url https://github.com \
+      --github-auth $(GITHUB_PAT) \
+      --commit $(Build.SourceVersion) \
+      --ref $(Build.SourceBranch)
+    displayName: 'Populate the CodeQL runner databases, analyze them, and upload the results to GitHub.'
+
