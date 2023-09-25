@@ -38,4 +38,4 @@ steps:
     --github-auth $(GITHUB_PAT) \
     --commit $(Build.SourceVersion) \
     --ref $(Build.SourceBranch)
-  displayName: 'Populate the CodeQL runner databases, analyze them, and upload the results to GitHub.'
+  displayName: 'Populate the CodeQL runner databases, analyze them, and upload the results to GitHub..'
